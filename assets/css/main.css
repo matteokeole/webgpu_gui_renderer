@@ -1,5 +1,9 @@
+body {
+	background-color: #202124;
+}
+
 canvas {
-	width: 500px;
-	height: 500px;
-	outline: 1px solid #000;
+	aspect-ratio: 1;
+	width: 512px;
+	outline: 1px solid #494c50;
 }

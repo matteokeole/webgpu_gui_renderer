@@ -1,145 +1,81 @@
-try {
-	if (!("gpu" in navigator)) throw "WebGPU not supported.";
+canvas.width = canvas.height = 512;
 
-	const gpu = navigator.gpu;
-	const adapter = await gpu.requestAdapter();
+if (navigator.gpu == null) throw new Error("WebGPU not supported.");
 
-	if (adapter == null) throw "Couldn't request WebGPU adapter.";
+const adapter = await navigator.gpu.requestAdapter();
 
-	const device = await adapter.requestDevice();
+if (adapter == null) throw new Error("Couldn't request WebGPU adapter.");
 
-	if (device == null) throw "Couldn't request WebGPU adapter.";
+const device = await adapter.requestDevice();
 
-	const VIEWPORT_WIDTH = 500;
-	const VIEWPORT_HEIGHT = 500;
-	const BALLS = 6;
-	const BUFFER_SIZE = Float32Array.BYTES_PER_ELEMENT * BALLS * 6;
-	const MIN_RADIUS = 4;
-	const MAX_RADIUS = 10;
+const context = canvas.getContext("webgpu");
 
-	canvas.width = VIEWPORT_WIDTH;
-	canvas.height = VIEWPORT_HEIGHT;
+const format = navigator.gpu.getPreferredCanvasFormat();
 
-	const ctx = canvas.getContext("2d");
+context.configure({device, format});
 
-	const source = await (await fetch("public/compute.wgsl")).text();
-	const module = device.createShaderModule({code: source});
+const encoder = device.createCommandEncoder();
 
-	const bindGroupLayout = device.createBindGroupLayout({
-		entries: [
-			{
-				binding: 0,
-				visibility: GPUShaderStage.COMPUTE,
-				buffer: {
-					type: "read-only-storage",
-				},
-			}, {
-				binding: 1,
-				visibility: GPUShaderStage.COMPUTE,
-				buffer: {
-					type: "storage",
-				},
-			}, {
-				binding: 2,
-				visibility: GPUShaderStage.COMPUTE,
-				buffer: {
-					type: "read-only-storage",
-				},
-			},
-		],
-	});
+const vertices = new Float32Array([
+	-.8,  .8,
+	 .8,  .8,
+	-.8, -.8,
 
-	const pipeline = device.createComputePipeline({
-		layout: device.createPipelineLayout({
-			bindGroupLayouts: [bindGroupLayout],
-		}),
-		compute: {
-			module,
-			entryPoint: "main",
-		},
-	});
+	 .8,  .8,
+	 .8, -.8,
+	-.8, -.8,
+]);
 
-	const scene = device.createBuffer({
-		size: Float32Array.BYTES_PER_ELEMENT * 2,
-		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-	});
+const vertexBuffer = device.createBuffer({
+	label: "Vertex buffer",
+	size: vertices.byteLength,
+	usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+});
 
-	const input = device.createBuffer({
-		size: BUFFER_SIZE,
-		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-	});
+device.queue.writeBuffer(vertexBuffer, 0, vertices);
 
-	const output = device.createBuffer({
-		size: BUFFER_SIZE,
-		usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-	});
+const vertexBufferLayout = {
+	arrayStride: 8,
+	attributes: [{
+		format: "float32x2",
+		offset: 0,
+		shaderLocation: 0,
+	}],
+};
 
-	const stagingBuffer = device.createBuffer({
-		size: BUFFER_SIZE,
-		usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
-	});
+const shaderModule = device.createShaderModule({
+	label: "Vertex shader",
+	code: await (await fetch("assets/shaders/main.wgsl")).text(),
+});
 
-	const bindGroup = device.createBindGroup({
-		layout: bindGroupLayout,
-		entries: [
-			{
-				binding: 0,
-				resource: {
-					buffer: input,
-				},
-			}, {
-				binding: 1,
-				resource: {
-					buffer: output,
-				},
-			}, {
-				binding: 2,
-				resource: {
-					buffer: scene,
-				},
-			},
-		],
-	});
+const vertexPipeline = device.createRenderPipeline({
+	label: "Vertex pipeline",
+	layout: "auto",
+	vertex: {
+		module: shaderModule,
+		entryPoint: "vertex",
+		buffers: [vertexBufferLayout],
+	},
+	fragment: {
+		module: shaderModule,
+		entryPoint: "fragment",
+		targets: [{format}],
+	},
+});
 
-	const inputBalls = new Float32Array(new ArrayBuffer(BUFFER_SIZE));
+const renderPass = encoder.beginRenderPass({
+	colorAttachments: [{
+		view: context.getCurrentTexture().createView(),
+		clearValue: [1, .2, 0, 1],
+		loadOp: "clear",
+		storeOp: "store",
+	}],
+});
 
-	for (let i = 0, l = inputBalls.length; i < l; i++) {
-		inputBalls[i * 6] = ((Math.random() * MAX_RADIUS - MIN_RADIUS + 1) | 0) + MIN_RADIUS;
-		inputBalls[i * 6 + 2] = ((Math.random() * VIEWPORT_WIDTH + 1) | 0);
-		inputBalls[i * 6 + 3] = ((Math.random() * VIEWPORT_HEIGHT + 1) | 0);
-		inputBalls[i * 6 + 4] = 0;
-		inputBalls[i * 6 + 5] = 0;
-	}
+renderPass.setPipeline(vertexPipeline);
+renderPass.setVertexBuffer(0, vertexBuffer);
+renderPass.draw(vertices.length * .5);
 
-	device.queue.writeBuffer(scene, 0, new Float32Array([VIEWPORT_WIDTH, VIEWPORT_HEIGHT]));
-	device.queue.writeBuffer(input, 0, inputBalls);
+renderPass.end();
 
-	const commandEncoder = device.createCommandEncoder();
-	const passEncoder = commandEncoder.beginComputePass();
-
-	passEncoder.setPipeline(pipeline);
-	passEncoder.setBindGroup(0, bindGroup);
-	passEncoder.dispatchWorkgroups(Math.ceil(BALLS / 64));
-	passEncoder.end();
-
-	commandEncoder.copyBufferToBuffer(output, 0, stagingBuffer, 0, BUFFER_SIZE);
-
-	device.queue.submit([commandEncoder.finish()]);
-
-	await stagingBuffer.mapAsync(GPUMapMode.READ, 0, BUFFER_SIZE);
-
-	const copyArrayBuffer = stagingBuffer.getMappedRange(0, BUFFER_SIZE);
-	const outputBalls = new Float32Array(copyArrayBuffer.slice());
-
-	stagingBuffer.unmap();
-
-	ctx.fillStyle = "orange";
-
-	for (let i = 0, l = outputBalls.length; i < l; i++) {
-		ctx.beginPath();
-		ctx.arc(outputBalls[i * 6 + 2], outputBalls[i * 6 + 3], outputBalls[i * 6], 0, 2 * Math.PI);
-		ctx.fill();
-	}
-} catch (error) {
-	console.error(error);
-}
+device.queue.submit([encoder.finish()]);
