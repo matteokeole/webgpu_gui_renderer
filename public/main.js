@@ -7,42 +7,48 @@ await renderer.build();
 
 document.body.appendChild(renderer.getCanvas());
 
-let mesh;
+const backgroundMesh = new Mesh();
+backgroundMesh.vertices = Float32Array.of(
+	-1,  1,
+	 1,  1,
+	-1, -1,
+	-1, -1,
+	 1,  1,
+	 1, -1,
+);
+backgroundMesh.color = Float32Array.of(1, .2, 0);
 
-{
-	mesh = new Mesh();
-	mesh.vertices = Float32Array.of(
-		-1,  1,
-		 1,  1,
-		-1, -1,
-	);
-	mesh.color = Float32Array.of(1, .2, 0);
+const animatedMesh = new Mesh();
+animatedMesh.vertices = Float32Array.of(
+	-.9, .7,
+	-.7, .7,
+	-.9, .5,
+	-.9, .5,
+	-.7, .7,
+	-.7, .5,
+);
+animatedMesh.color = Float32Array.of(1, .8, 0);
 
-	renderer.scene = [mesh];
-	renderer.updateAndRender();
-}
+// Draw red background
+renderer.scene.push(backgroundMesh);
+renderer.updateAndRender();
 
-{
-	mesh = new Mesh();
-	mesh.vertices = Float32Array.of(
-		-.2,  .2,
-		 .8,  .2,
-		-.2, -.8,
-	);
-	mesh.color = Float32Array.of(1, .8, 0);
+// Draw orange mesh
+renderer.scene.length = 0;
+renderer.scene.push(animatedMesh);
+renderer.updateAndRender();
 
-	renderer.scene = [mesh];
-	renderer.updateAndRender();
-}
+// Transform orange mesh
+animatedMesh.vertices = Float32Array.of(
+	.7, .7,
+	.9, .7,
+	.7, .5,
+	.7, .5,
+	.9, .7,
+	.9, .5,
+);
 
-{
-	mesh.vertices = Float32Array.of(
-		-.7,  .7,
-		-.5,  .7,
-		-.7, .5,
-	);
-	mesh.color = Float32Array.of(1, .8, 0);
-
-	renderer.scene = [mesh];
-	renderer.updateAndRender();
-}
+// Redraw orange mesh
+renderer.scene.length = 0;
+renderer.scene.push(animatedMesh);
+renderer.updateAndRender();

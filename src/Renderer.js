@@ -143,7 +143,7 @@ export function Renderer() {
 		renderPass.setPipeline(renderPipeline);
 		renderPass.setVertexBuffer(0, vertexBuffer);
 		renderPass.setBindGroup(0, bindGroup);
-		renderPass.draw(3);
+		renderPass.draw(6);
 		renderPass.end();
 	};
 }
