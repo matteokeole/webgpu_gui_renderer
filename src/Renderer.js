@@ -1,57 +1,80 @@
-export function Renderer() {
-	/** @type {?GPUDevice} */
-	let device;
+import {Mesh} from "./Mesh.js";
+import {Scene} from "./Scene.js";
 
-	/** @type {?HTMLCanvasElement} */
-	let canvas;
+export class Renderer {
+	/** @type {?GPUDevice} */
+	#device;
+
+	/** @type {HTMLCanvasElement} */
+	#canvas;
 
 	/** @type {?GPUCanvasContext} */
-	let context;
+	#context;
 
 	/** @type {?GPUBuffer} */
-	let vertexBuffer;
+	#vertexBuffer;
 
 	/** @type {?GPUBuffer} */
-	let colorBuffer;
+	#colorBuffer;
 
 	/** @type {?GPUBindGroup} */
-	let bindGroup;
+	#bindGroup;
 
 	/** @type {?GPURenderPipeline} */
-	let renderPipeline;
+	#renderPipeline;
 
-	/** @type {Mesh[]} */
-	this.scene = [];
+	/** @type {Scene} */
+	#scene;
 
-	/** @returns {?HTMLCanvasElement} */
-	this.getCanvas = () => canvas;
+	/** @param {?HTMLCanvasElement} canvas */
+	constructor(canvas) {
+		this.#canvas = canvas ?? document.createElement("canvas");
+	}
 
-	this.build = async function() {
+	/** @returns {HTMLCanvasElement} */
+	getCanvas() {
+		return this.#canvas;
+	}
+
+	/** @returns {?Scene} */
+	getScene() {
+		return this.#scene;
+	}
+
+	/** @param {?Scene} scene */
+	setScene(scene) {
+		this.#scene = scene;
+	}
+
+	async build() {
 		if (navigator.gpu == null) throw new Error("WebGPU not supported.");
 
 		const adapter = await navigator.gpu.requestAdapter();
 
 		if (adapter == null) throw new Error("Couldn't request WebGPU adapter.");
 
-		device = await adapter.requestDevice();
-		canvas = document.createElement("canvas");
-		context = canvas.getContext("webgpu");
-		canvas.width = canvas.height = 512;
+		this.#device = await adapter.requestDevice();
+		this.#context = this.#canvas.getContext("webgpu");
+		this.#canvas.width = this.#canvas.height = 512;
+
 		const format = navigator.gpu.getPreferredCanvasFormat();
 
-		context.configure({device, format});
+		this.#context.configure({
+			device: this.#device,
+			format,
+		});
 
-		vertexBuffer = device.createBuffer({
+		this.#vertexBuffer = this.#device.createBuffer({
 			size: Float32Array.BYTES_PER_ELEMENT * 4 * 3,
 			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
 		});
 
-		colorBuffer = device.createBuffer({
+		this.#colorBuffer = this.#device.createBuffer({
 			size: Float32Array.BYTES_PER_ELEMENT * 4 * 3,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
 
-		const bindGroupLayout = device.createBindGroupLayout({
+		const bindGroupLayout = this.#device.createBindGroupLayout({
 			entries: [
 				{
 					binding: 0,
@@ -63,31 +86,31 @@ export function Renderer() {
 			],
 		});
 
-		bindGroup = device.createBindGroup({
+		this.#bindGroup = this.#device.createBindGroup({
 			layout: bindGroupLayout,
 			entries: [
 				{
 					binding: 0,
 					resource: {
-						buffer: colorBuffer,
+						buffer: this.#colorBuffer,
 					},
 				},
 			],
 		});
 
-		const pipelineLayout = device.createPipelineLayout({
+		const pipelineLayout = this.#device.createPipelineLayout({
 			bindGroupLayouts: [bindGroupLayout],
 		});
 
-		const vertexShaderModule = device.createShaderModule({
+		const vertexShaderModule = this.#device.createShaderModule({
 			code: await (await fetch("assets/shaders/vertex.wgsl")).text(),
 		});
 
-		const fragmentShaderModule = device.createShaderModule({
+		const fragmentShaderModule = this.#device.createShaderModule({
 			code: await (await fetch("assets/shaders/fragment.wgsl")).text(),
 		});
 
-		renderPipeline = device.createRenderPipeline({
+		this.#renderPipeline = this.#device.createRenderPipeline({
 			layout: pipelineLayout,
 			vertex: {
 				module: vertexShaderModule,
@@ -109,40 +132,42 @@ export function Renderer() {
 				targets: [{format}],
 			},
 		});
-	};
+	}
 
-	this.updateAndRender = function() {
-		const encoder = device.createCommandEncoder();
+	updateAndRender() {
+		const encoder = this.#device.createCommandEncoder();
 
 		this.update(encoder);
 		this.render(encoder);
 
-		device.queue.submit([encoder.finish()]);
-	};
+		this.#device.queue.submit([encoder.finish()]);
+	}
 
 	/** @param {GPUCommandEncoder} _ */
-	this.update = _ => {};
+	update(_) {}
 
 	/** @param {GPUCommandEncoder} encoder */
-	this.render = function(encoder) {
-		const mesh = this.scene[0];
-		const vertices = mesh.vertices;
+	render(encoder) {
+		/** @type {?Mesh} */
+		const mesh = this.#scene.getMesh();
 
-		device.queue.writeBuffer(vertexBuffer, 0, vertices);
-		device.queue.writeBuffer(colorBuffer, 0, mesh.color);
+		if (mesh === null) return;
+
+		this.#device.queue.writeBuffer(this.#vertexBuffer, 0, mesh.getDisplacedVertices());
+		this.#device.queue.writeBuffer(this.#colorBuffer, 0, mesh.getColor());
 
 		const renderPass = encoder.beginRenderPass({
 			colorAttachments: [
 				{
-					view: context.getCurrentTexture().createView(),
+					view: this.#context.getCurrentTexture().createView(),
 					loadOp: "load",
 					storeOp: "store",
 				},
 			],
 		});
-		renderPass.setPipeline(renderPipeline);
-		renderPass.setVertexBuffer(0, vertexBuffer);
-		renderPass.setBindGroup(0, bindGroup);
+		renderPass.setPipeline(this.#renderPipeline);
+		renderPass.setVertexBuffer(0, this.#vertexBuffer);
+		renderPass.setBindGroup(0, this.#bindGroup);
 		renderPass.draw(6);
 		renderPass.end();
 	};
