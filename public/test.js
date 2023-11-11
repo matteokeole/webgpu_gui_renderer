@@ -3,9 +3,10 @@ import {Mesh} from "../src/Mesh.js";
 import {Renderer} from "../src/Renderer.js";
 import {Scene} from "../src/Scene.js";
 
-/** @param {Renderer} renderer */
+/**
+ * @param {Renderer} renderer
+ */
 export function test(renderer) {
-	/** @type {Scene} */
 	const scene = new Scene();
 
 	renderer.setScene(scene);
