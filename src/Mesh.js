@@ -1,16 +1,24 @@
 import {Vector2, Vector3} from "../src/math/index.js";
 
 export class Mesh {
-	/** @type {Float32Array} */
+	/**
+	 * @type {Float32Array}
+	 */
 	#vertices;
 
-	/** @type {Float32Array} */
+	/**
+	 * @type {Float32Array}
+	 */
 	#displacedVertices;
 
-	/** @type {Vector2} */
+	/**
+	 * @type {Vector2}
+	 */
 	#size;
 
-	/** @type {Vector3} */
+	/**
+	 * @type {Vector3}
+	 */
 	#color;
 
 	/**
@@ -33,22 +41,21 @@ export class Mesh {
 		this.#color = color;
 	}
 
-	/** @returns {Float32Array} */
 	getDisplacedVertices() {
 		return this.#displacedVertices;
 	}
 
-	/** @returns {Vector2} */
 	getSize() {
 		return this.#size;
 	}
 
-	/** @returns {Vector3} */
 	getColor() {
 		return this.#color;
 	}
 
-	/** @param {Vector2} position */
+	/**
+	 * @param {Vector2} position
+	 */
 	setRelativePosition(position) {
 		const [x, y] = position;
 

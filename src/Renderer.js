@@ -1,57 +1,89 @@
-import {Mesh} from "./Mesh.js";
 import {Scene} from "./Scene.js";
 
 export class Renderer {
-	/** @type {?GPUDevice} */
+	/**
+	 * @type {?GPUDevice}
+	 */
 	#device;
 
-	/** @type {HTMLCanvasElement} */
+	/**
+	 * @type {HTMLCanvasElement}
+	 */
 	#canvas;
 
-	/** @type {?GPUCanvasContext} */
+	/**
+	 * @type {?GPUCanvasContext}
+	 */
 	#context;
 
-	/** @type {?GPUBuffer} */
+	/**
+	 * @type {?GPUBuffer}
+	 */
 	#vertexBuffer;
 
-	/** @type {?GPUBuffer} */
+	/**
+	 * @type {?GPUBuffer}
+	 */
 	#colorBuffer;
 
-	/** @type {?GPUBindGroup} */
+	/**
+	 * @type {?GPUBindGroup}
+	 */
 	#bindGroup;
 
-	/** @type {?GPURenderPipeline} */
+	/**
+	 * @type {?GPURenderPipeline}
+	 */
 	#renderPipeline;
 
-	/** @type {Scene} */
+	/**
+	 * @type {?Scene}
+	 */
 	#scene;
 
-	/** @param {?HTMLCanvasElement} canvas */
-	constructor(canvas) {
-		this.#canvas = canvas ?? document.createElement("canvas");
+	/**
+	 * @param {HTMLCanvasElement} [canvas]
+	 */
+	constructor(canvas = document.createElement("canvas")) {
+		this.#device = null;
+		this.#canvas = canvas;
+		this.#context = null;
+		this.#vertexBuffer = null;
+		this.#colorBuffer = null;
+		this.#bindGroup = null;
+		this.#renderPipeline = null;
+		this.#scene = null;
 	}
 
-	/** @returns {HTMLCanvasElement} */
 	getCanvas() {
 		return this.#canvas;
 	}
 
-	/** @returns {?Scene} */
 	getScene() {
 		return this.#scene;
 	}
 
-	/** @param {?Scene} scene */
+	/**
+	 * @param {Scene} scene
+	 */
 	setScene(scene) {
 		this.#scene = scene;
 	}
 
+	/**
+	 * @throws {Error} if the browser doesn't support WebGPU
+	 * @throws {Error} if the adapter couldn't be requested
+	 */
 	async build() {
-		if (navigator.gpu == null) throw new Error("WebGPU not supported.");
+		if (navigator.gpu == null) {
+			throw new Error("WebGPU not supported.");
+		}
 
 		const adapter = await navigator.gpu.requestAdapter();
 
-		if (adapter == null) throw new Error("Couldn't request WebGPU adapter.");
+		if (adapter == null) {
+			throw new Error("Couldn't request WebGPU adapter.");
+		}
 
 		this.#device = await adapter.requestDevice();
 		this.#context = this.#canvas.getContext("webgpu");
@@ -143,12 +175,15 @@ export class Renderer {
 		this.#device.queue.submit([encoder.finish()]);
 	}
 
-	/** @param {GPUCommandEncoder} _ */
-	update(_) {}
+	/**
+	 * @param {GPUCommandEncoder} encoder
+	 */
+	update(encoder) {}
 
-	/** @param {GPUCommandEncoder} encoder */
+	/**
+	 * @param {GPUCommandEncoder} encoder
+	 */
 	render(encoder) {
-		/** @type {?Mesh} */
 		const mesh = this.#scene.getMesh();
 
 		if (mesh === null) return;

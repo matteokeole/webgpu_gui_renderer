@@ -1,15 +1,18 @@
 import {Mesh} from "./Mesh.js";
 
 export class Scene {
-	/** @type {?Mesh} */
+	/**
+	 * @type {?Mesh}
+	 */
 	#mesh;
 
-	/** @returns {?Mesh} */
 	getMesh() {
 		return this.#mesh;
 	}
 
-	/** @type {?Mesh} */
+	/**
+	 * @param {Mesh} mesh
+	 */
 	setMesh(mesh) {
 		this.#mesh = mesh;
 	}
