@@ -42,11 +42,11 @@ export class Renderer {
 	#scene;
 
 	/**
-	 * @param {HTMLCanvasElement} [canvas]
+	 * @param {?HTMLCanvasElement} [canvas]
 	 */
-	constructor(canvas = document.createElement("canvas")) {
+	constructor(canvas) {
 		this.#device = null;
-		this.#canvas = canvas;
+		this.#canvas = canvas ?? document.createElement("canvas");
 		this.#context = null;
 		this.#vertexBuffer = null;
 		this.#colorBuffer = null;
