@@ -1,7 +1,7 @@
 import {Vector2, Vector3} from "../src/math/index.js";
 import {Mesh} from "../src/Mesh.js";
 import {Scene} from "../src/Scene.js";
-import {WebGPURenderer} from "../src/WebGPURenderer.js";
+import {WebGPURenderer} from "../src/Renderer/WebGPURenderer.js";
 
 /**
  * @param {WebGPURenderer} renderer
@@ -20,7 +20,7 @@ export function test(renderer) {
 		orangeRedMesh.setRelativePosition(new Vector2(-1, 1));
 
 		renderer.getScene().setMesh(orangeRedMesh);
-		renderer.updateAndRender();
+		renderer.render();
 	}
 
 	// Yellow mesh
@@ -33,13 +33,13 @@ export function test(renderer) {
 
 		// Draw orange mesh
 		renderer.getScene().setMesh(yellowMesh);
-		renderer.updateAndRender();
+		renderer.render();
 
 		// Transform orange mesh
 		yellowMesh.setRelativePosition(new Vector2(-.4, -.7));
 
 		// Redraw orange mesh
 		renderer.getScene().setMesh(yellowMesh);
-		renderer.updateAndRender();
+		renderer.render();
 	}
 }

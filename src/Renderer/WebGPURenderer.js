@@ -1,15 +1,11 @@
-import {Scene} from "./Scene.js";
+import {Renderer} from "./Renderer.js";
+import {Scene} from "../Scene.js";
 
-export class WebGPURenderer {
+export class WebGPURenderer extends Renderer {
 	/**
 	 * @type {?GPUDevice}
 	 */
 	#device;
-
-	/**
-	 * @type {HTMLCanvasElement}
-	 */
-	#canvas;
 
 	/**
 	 * @type {?GPUCanvasContext}
@@ -37,37 +33,29 @@ export class WebGPURenderer {
 	#renderPipeline;
 
 	/**
-	 * @type {?Scene}
+	 * @type {HTMLCanvasElement}
 	 */
-	#scene;
+	_canvas = null;
 
 	/**
-	 * @param {HTMLCanvasElement} [canvas]
+	 * @param {HTMLCanvasElement} canvas
 	 */
 	constructor(canvas) {
+		super(canvas);
+
+		// What
+		this._canvas = canvas;
+
 		this.#device = null;
-		this.#canvas = canvas ?? document.createElement("canvas");
 		this.#context = null;
 		this.#vertexBuffer = null;
 		this.#colorBuffer = null;
 		this.#bindGroup = null;
 		this.#renderPipeline = null;
-		this.#scene = null;
 	}
 
 	getCanvas() {
-		return this.#canvas;
-	}
-
-	getScene() {
-		return this.#scene;
-	}
-
-	/**
-	 * @param {Scene} scene
-	 */
-	setScene(scene) {
-		this.#scene = scene;
+		return this._canvas;
 	}
 
 	/**
@@ -75,19 +63,21 @@ export class WebGPURenderer {
 	 * @throws {Error} if the adapter couldn't be requested
 	 */
 	async build() {
-		if (navigator.gpu == null) {
-			throw new Error("WebGPU not supported.");
+		if (navigator.gpu === null) {
+			throw new Error("WebGPU is not supported.");
 		}
 
 		const adapter = await navigator.gpu.requestAdapter();
 
-		if (adapter == null) {
-			throw new Error("Couldn't request WebGPU adapter.");
+		if (adapter === null) {
+			throw new Error("Couldn't request a WebGPU adapter.");
 		}
 
 		this.#device = await adapter.requestDevice();
-		this.#context = this.#canvas.getContext("webgpu");
-		this.#canvas.width = this.#canvas.height = 512;
+		this.#context = this._canvas.getContext("webgpu");
+
+		this._canvas.width = 512;
+		this._canvas.height = 512;
 
 		const format = navigator.gpu.getPreferredCanvasFormat();
 
@@ -166,11 +156,10 @@ export class WebGPURenderer {
 		});
 	}
 
-	updateAndRender() {
+	render() {
 		const encoder = this.#device.createCommandEncoder();
 
-		this.update(encoder);
-		this.render(encoder);
+		this.#render(encoder);
 
 		this.#device.queue.submit([encoder.finish()]);
 	}
@@ -178,13 +167,8 @@ export class WebGPURenderer {
 	/**
 	 * @param {GPUCommandEncoder} encoder
 	 */
-	update(encoder) {}
-
-	/**
-	 * @param {GPUCommandEncoder} encoder
-	 */
-	render(encoder) {
-		const mesh = this.#scene.getMesh();
+	#render(encoder) {
+		const mesh = this.getScene().getMesh();
 
 		if (mesh === null) {
 			return;
