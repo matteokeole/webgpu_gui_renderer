@@ -1,45 +1,45 @@
 import {Vector2, Vector3} from "../src/math/index.js";
 import {Mesh} from "../src/Mesh.js";
-import {Renderer} from "../src/Renderer.js";
 import {Scene} from "../src/Scene.js";
+import {WebGPURenderer} from "../src/WebGPURenderer.js";
 
 /**
- * @param {Renderer} renderer
+ * @param {WebGPURenderer} renderer
  */
 export function test(renderer) {
 	const scene = new Scene();
 
 	renderer.setScene(scene);
 
-	// Background mesh
+	// Orange/red mesh
 	{
-		const backgroundMesh = new Mesh({
+		const orangeRedMesh = new Mesh({
 			size: new Vector2(2, 2),
 			color: new Vector3(1, .2, 0),
 		});
-		backgroundMesh.setRelativePosition(new Vector2(-1, 1));
+		orangeRedMesh.setRelativePosition(new Vector2(-1, 1));
 
-		renderer.getScene().setMesh(backgroundMesh);
+		renderer.getScene().setMesh(orangeRedMesh);
 		renderer.updateAndRender();
 	}
 
-	// Orange mesh
+	// Yellow mesh
 	{
-		const orangeMesh = new Mesh({
+		const yellowMesh = new Mesh({
 			size: new Vector2(.2, .2),
 			color: new Vector3(1, .8, 0),
 		});
-		orangeMesh.setRelativePosition(new Vector2(-.9, -.7));
+		yellowMesh.setRelativePosition(new Vector2(-.9, -.7));
 
 		// Draw orange mesh
-		renderer.getScene().setMesh(orangeMesh);
+		renderer.getScene().setMesh(yellowMesh);
 		renderer.updateAndRender();
 
 		// Transform orange mesh
-		orangeMesh.setRelativePosition(new Vector2(-.4, -.7));
+		yellowMesh.setRelativePosition(new Vector2(-.4, -.7));
 
 		// Redraw orange mesh
-		renderer.getScene().setMesh(orangeMesh);
+		renderer.getScene().setMesh(yellowMesh);
 		renderer.updateAndRender();
 	}
 }

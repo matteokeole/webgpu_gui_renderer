@@ -1,5 +1,11 @@
 import {Vector2, Vector3} from "../src/math/index.js";
 
+/**
+ * @typedef {Object} MeshDescriptor
+ * @property {Vector2} size
+ * @property {Vector3} color
+ */
+
 export class Mesh {
 	/**
 	 * @type {Float32Array}
@@ -22,12 +28,10 @@ export class Mesh {
 	#color;
 
 	/**
-	 * @param {Object} options
-	 * @param {Vector2} options.size
-	 * @param {Vector3} options.color
+	 * @param {MeshDescriptor} descriptor
 	 */
-	constructor({size, color}) {
-		const [w, h] = size;
+	constructor(descriptor) {
+		const [w, h] = descriptor.size;
 
 		this.#vertices = Float32Array.of(
 			0,  0,
@@ -37,8 +41,8 @@ export class Mesh {
 			w,  0,
 			w, -h,
 		);
-		this.#size = size;
-		this.#color = color;
+		this.#size = descriptor.size;
+		this.#color = descriptor.color;
 	}
 
 	getDisplacedVertices() {

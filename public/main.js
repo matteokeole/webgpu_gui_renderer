@@ -1,7 +1,7 @@
-import {Renderer} from "../src/Renderer.js";
+import {WebGPURenderer} from "../src/WebGPURenderer.js";
 import {test} from "./test.js";
 
-const renderer = new Renderer(null);
+const renderer = new WebGPURenderer();
 await renderer.build();
 
 document.body.appendChild(renderer.getCanvas());

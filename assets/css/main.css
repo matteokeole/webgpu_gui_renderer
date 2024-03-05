@@ -3,7 +3,7 @@ body {
 }
 
 canvas {
-	aspect-ratio: 1;
 	width: 512px;
-	outline: 1px solid #494c50;
+	height: 512px;
+	border: 1px solid #494c50;
 }

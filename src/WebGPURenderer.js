@@ -1,6 +1,6 @@
 import {Scene} from "./Scene.js";
 
-export class Renderer {
+export class WebGPURenderer {
 	/**
 	 * @type {?GPUDevice}
 	 */
@@ -42,7 +42,7 @@ export class Renderer {
 	#scene;
 
 	/**
-	 * @param {?HTMLCanvasElement} [canvas]
+	 * @param {HTMLCanvasElement} [canvas]
 	 */
 	constructor(canvas) {
 		this.#device = null;
@@ -186,7 +186,9 @@ export class Renderer {
 	render(encoder) {
 		const mesh = this.#scene.getMesh();
 
-		if (mesh === null) return;
+		if (mesh === null) {
+			return;
+		}
 
 		this.#device.queue.writeBuffer(this.#vertexBuffer, 0, mesh.getDisplacedVertices());
 		this.#device.queue.writeBuffer(this.#colorBuffer, 0, mesh.getColor());
